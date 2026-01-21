@@ -1,154 +1,231 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal } from 'lucide-react';
-import type { Post as PostType } from '@/data/mockData';
+import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { usePosts, PostWithDetails } from '@/hooks/usePosts';
+import { useComments } from '@/hooks/useComments';
+import CommentsModal from './CommentsModal';
+import { formatDistanceToNow } from 'date-fns';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface PostProps {
-  post: PostType;
+  post: PostWithDetails;
   index: number;
 }
 
 const Post = ({ post, index }: PostProps) => {
-  const [isLiked, setIsLiked] = useState(post.isLiked);
-  const [isSaved, setIsSaved] = useState(post.isSaved);
-  const [likes, setLikes] = useState(post.likes);
   const [showHeart, setShowHeart] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [newComment, setNewComment] = useState('');
+  const { user } = useAuth();
+  const { likePost, unlikePost, deletePost } = usePosts();
+  const { addComment } = useComments(post.id);
 
   const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikes(isLiked ? likes - 1 : likes + 1);
+    if (!user) return;
+    if (post.is_liked) {
+      unlikePost.mutate(post.id);
+    } else {
+      likePost.mutate(post.id);
+    }
   };
 
   const handleDoubleTap = () => {
-    if (!isLiked) {
-      setIsLiked(true);
-      setLikes(likes + 1);
+    if (!user) return;
+    if (!post.is_liked) {
+      likePost.mutate(post.id);
     }
     setShowHeart(true);
     setTimeout(() => setShowHeart(false), 800);
   };
 
+  const handleCommentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim() || !user) return;
+    addComment.mutate(newComment);
+    setNewComment('');
+  };
+
+  const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
+
   return (
-    <motion.article
-      className="bg-card border border-border rounded-lg overflow-hidden mb-6"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between p-4">
-        <div className="flex items-center gap-3">
-          <div className="story-ring">
-            <div className="w-9 h-9 rounded-full overflow-hidden bg-card p-[2px]">
-              <img
-                src={post.avatar}
-                alt={post.username}
-                className="w-full h-full object-cover rounded-full"
-              />
-            </div>
-          </div>
-          <div>
-            <h3 className="font-semibold text-sm text-foreground">{post.username}</h3>
-            <p className="text-xs text-muted-foreground">{post.timeAgo}</p>
-          </div>
-        </div>
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          className="text-foreground hover:text-muted-foreground transition-colors"
-        >
-          <MoreHorizontal className="w-5 h-5" />
-        </motion.button>
-      </div>
-
-      {/* Image */}
-      <div
-        className="relative aspect-square cursor-pointer"
-        onDoubleClick={handleDoubleTap}
+    <>
+      <motion.article
+        className="bg-card border border-border rounded-lg overflow-hidden mb-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.1 }}
       >
-        <img
-          src={post.image}
-          alt="Post"
-          className="w-full h-full object-cover"
-        />
-        <AnimatePresence>
-          {showHeart && (
-            <motion.div
-              className="absolute inset-0 flex items-center justify-center"
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Heart className="w-24 h-24 text-white fill-white drop-shadow-lg" />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+        {/* Header */}
+        <div className="flex items-center justify-between p-4">
+          <Link to={`/profile/${post.profile.username}`} className="flex items-center gap-3">
+            <div className="story-ring">
+              <div className="w-9 h-9 rounded-full overflow-hidden bg-card p-[2px]">
+                <img
+                  src={post.profile.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop'}
+                  alt={post.profile.username}
+                  className="w-full h-full object-cover rounded-full"
+                />
+              </div>
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm text-foreground">{post.profile.username}</h3>
+              <p className="text-xs text-muted-foreground">{timeAgo}</p>
+            </div>
+          </Link>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="text-foreground hover:text-muted-foreground transition-colors"
+              >
+                <MoreHorizontal className="w-5 h-5" />
+              </motion.button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {user?.id === post.user_id && (
+                <DropdownMenuItem
+                  onClick={() => deletePost.mutate(post.id)}
+                  className="text-destructive"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem>Report</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
-      {/* Actions */}
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-4">
-            <motion.button
-              onClick={handleLike}
-              whileTap={{ scale: 0.8 }}
-              className={isLiked ? 'animate-heart-pop' : ''}
-            >
-              <Heart
+        {/* Media */}
+        <div
+          className="relative aspect-square cursor-pointer"
+          onDoubleClick={handleDoubleTap}
+        >
+          {post.is_reel ? (
+            <video
+              src={post.media_url}
+              controls
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <img
+              src={post.media_url}
+              alt="Post"
+              className="w-full h-full object-cover"
+            />
+          )}
+          <AnimatePresence>
+            {showHeart && (
+              <motion.div
+                className="absolute inset-0 flex items-center justify-center"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Heart className="w-24 h-24 text-white fill-white drop-shadow-lg" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Actions */}
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-4">
+              <motion.button
+                onClick={handleLike}
+                whileTap={{ scale: 0.8 }}
+                className={post.is_liked ? 'animate-heart-pop' : ''}
+              >
+                <Heart
+                  className={`w-6 h-6 transition-colors ${
+                    post.is_liked ? 'text-primary fill-primary' : 'text-foreground hover:text-muted-foreground'
+                  }`}
+                />
+              </motion.button>
+              <motion.button 
+                whileHover={{ scale: 1.1 }} 
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setShowComments(true)}
+              >
+                <MessageCircle className="w-6 h-6 text-foreground hover:text-muted-foreground transition-colors" />
+              </motion.button>
+              <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <Send className="w-6 h-6 text-foreground hover:text-muted-foreground transition-colors" />
+              </motion.button>
+            </div>
+            <motion.button whileTap={{ scale: 0.8 }}>
+              <Bookmark
                 className={`w-6 h-6 transition-colors ${
-                  isLiked ? 'text-primary fill-primary' : 'text-foreground hover:text-muted-foreground'
+                  post.is_saved ? 'text-foreground fill-foreground' : 'text-foreground hover:text-muted-foreground'
                 }`}
               />
             </motion.button>
-            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-              <MessageCircle className="w-6 h-6 text-foreground hover:text-muted-foreground transition-colors" />
-            </motion.button>
-            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-              <Send className="w-6 h-6 text-foreground hover:text-muted-foreground transition-colors" />
-            </motion.button>
           </div>
-          <motion.button
-            onClick={() => setIsSaved(!isSaved)}
-            whileTap={{ scale: 0.8 }}
-          >
-            <Bookmark
-              className={`w-6 h-6 transition-colors ${
-                isSaved ? 'text-foreground fill-foreground' : 'text-foreground hover:text-muted-foreground'
-              }`}
-            />
-          </motion.button>
+
+          {/* Likes */}
+          <p className="font-semibold text-sm text-foreground mb-2">
+            {post.likes_count.toLocaleString()} likes
+          </p>
+
+          {/* Caption */}
+          {post.caption && (
+            <p className="text-sm text-foreground">
+              <Link to={`/profile/${post.profile.username}`} className="font-semibold mr-2 hover:underline">
+                {post.profile.username}
+              </Link>
+              {post.caption}
+            </p>
+          )}
+
+          {/* Comments */}
+          {post.comments_count > 0 && (
+            <button 
+              className="text-sm text-muted-foreground mt-2 hover:text-foreground transition-colors"
+              onClick={() => setShowComments(true)}
+            >
+              View all {post.comments_count} comments
+            </button>
+          )}
+
+          {/* Add Comment */}
+          {user && (
+            <form onSubmit={handleCommentSubmit} className="flex items-center gap-3 mt-3 pt-3 border-t border-border">
+              <input
+                type="text"
+                placeholder="Add a comment..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              />
+              <button 
+                type="submit"
+                disabled={!newComment.trim()}
+                className="text-sm font-semibold text-primary disabled:opacity-50 hover:opacity-80 transition-opacity"
+              >
+                Post
+              </button>
+            </form>
+          )}
         </div>
+      </motion.article>
 
-        {/* Likes */}
-        <p className="font-semibold text-sm text-foreground mb-2">
-          {likes.toLocaleString()} likes
-        </p>
-
-        {/* Caption */}
-        <p className="text-sm text-foreground">
-          <span className="font-semibold mr-2">{post.username}</span>
-          {post.caption}
-        </p>
-
-        {/* Comments */}
-        <button className="text-sm text-muted-foreground mt-2 hover:text-foreground transition-colors">
-          View all {post.comments} comments
-        </button>
-
-        {/* Add Comment */}
-        <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border">
-          <input
-            type="text"
-            placeholder="Add a comment..."
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          />
-          <button className="text-sm font-semibold text-primary opacity-50 hover:opacity-100 transition-opacity">
-            Post
-          </button>
-        </div>
-      </div>
-    </motion.article>
+      <CommentsModal
+        postId={post.id}
+        isOpen={showComments}
+        onClose={() => setShowComments(false)}
+      />
+    </>
   );
 };
 

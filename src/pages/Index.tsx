@@ -3,9 +3,12 @@ import Stories from '@/components/Stories';
 import Post from '@/components/Post';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
-import { posts } from '@/data/mockData';
+import { usePosts } from '@/hooks/usePosts';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Index = () => {
+  const { posts, isLoading } = usePosts();
+
   return (
     <div className="min-h-screen bg-background dark">
       <Navbar />
@@ -17,9 +20,34 @@ const Index = () => {
             <Stories />
             
             <div className="space-y-6">
-              {posts.map((post, index) => (
-                <Post key={post.id} post={post} index={index} />
-              ))}
+              {isLoading ? (
+                <>
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="bg-card border border-border rounded-lg overflow-hidden mb-6">
+                      <div className="flex items-center gap-3 p-4">
+                        <Skeleton className="w-9 h-9 rounded-full" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-3 w-24" />
+                          <Skeleton className="h-2 w-16" />
+                        </div>
+                      </div>
+                      <Skeleton className="aspect-square" />
+                      <div className="p-4 space-y-3">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-3 w-full" />
+                      </div>
+                    </div>
+                  ))}
+                </>
+              ) : posts?.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">No posts yet. Follow someone or create a post!</p>
+                </div>
+              ) : (
+                posts?.map((post, index) => (
+                  <Post key={post.id} post={post} index={index} />
+                ))
+              )}
             </div>
           </div>
 
