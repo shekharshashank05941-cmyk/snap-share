@@ -1,12 +1,34 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import Navbar from '@/components/Navbar';
+import Stories from '@/components/Stories';
+import Post from '@/components/Post';
+import Sidebar from '@/components/Sidebar';
+import MobileNav from '@/components/MobileNav';
+import { posts } from '@/data/mockData';
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background dark">
+      <Navbar />
+      
+      <main className="pt-20 pb-20 md:pb-8 max-w-5xl mx-auto px-4">
+        <div className="flex gap-8">
+          {/* Main Feed */}
+          <div className="flex-1 max-w-[470px] mx-auto lg:mx-0">
+            <Stories />
+            
+            <div className="space-y-6">
+              {posts.map((post, index) => (
+                <Post key={post.id} post={post} index={index} />
+              ))}
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <Sidebar />
+        </div>
+      </main>
+
+      <MobileNav />
     </div>
   );
 };
