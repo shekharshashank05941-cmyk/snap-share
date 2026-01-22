@@ -13,13 +13,13 @@ const Index = () => {
     <div className="min-h-screen bg-background dark">
       <Navbar />
       
-      <main className="pt-20 pb-20 md:pb-8 max-w-5xl mx-auto px-4">
-        <div className="flex gap-8">
+      <main className="pt-20 pb-24 md:pb-8 max-w-5xl mx-auto px-2 sm:px-4">
+        <div className="flex gap-4 lg:gap-8">
           {/* Main Feed */}
           <div className="flex-1 max-w-[470px] mx-auto lg:mx-0">
             <Stories />
             
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {isLoading ? (
                 <>
                   {[1, 2, 3].map((i) => (
