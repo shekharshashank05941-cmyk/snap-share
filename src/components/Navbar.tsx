@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import CreatePostModal from './CreatePostModal';
+import SearchModal from './SearchModal';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +15,7 @@ import {
 
 const Navbar = () => {
   const [showCreatePost, setShowCreatePost] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const { user, signOut } = useAuth();
   const { currentUserProfile } = useProfile();
   const navigate = useNavigate();
@@ -38,14 +40,13 @@ const Navbar = () => {
             </motion.h1>
           </Link>
 
-          {/* Search Bar - Desktop */}
-          <div className="hidden md:flex items-center bg-secondary rounded-lg px-4 py-2 w-64">
+          {/* Search Bar - Desktop (clickable to open modal) */}
+          <div 
+            className="hidden md:flex items-center bg-secondary rounded-lg px-4 py-2 w-64 cursor-pointer hover:bg-secondary/80 transition-colors"
+            onClick={() => setShowSearch(true)}
+          >
             <Search className="w-4 h-4 text-muted-foreground mr-2" />
-            <input
-              type="text"
-              placeholder="Search"
-              className="bg-transparent outline-none text-sm w-full placeholder:text-muted-foreground"
-            />
+            <span className="text-sm text-muted-foreground">Search</span>
           </div>
 
           {/* Navigation Icons */}
@@ -53,6 +54,11 @@ const Navbar = () => {
             <Link to="/">
               <NavIcon icon={<Home className="w-6 h-6" />} active />
             </Link>
+            <NavIcon 
+              icon={<Search className="w-6 h-6" />} 
+              className="md:hidden"
+              onClick={() => setShowSearch(true)}
+            />
             <Link to="/explore">
               <NavIcon icon={<Compass className="w-6 h-6" />} className="hidden sm:flex" />
             </Link>
@@ -107,6 +113,7 @@ const Navbar = () => {
       </nav>
 
       <CreatePostModal isOpen={showCreatePost} onClose={() => setShowCreatePost(false)} />
+      <SearchModal isOpen={showSearch} onClose={() => setShowSearch(false)} />
     </>
   );
 };
