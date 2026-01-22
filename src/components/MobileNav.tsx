@@ -15,8 +15,8 @@ const MobileNav = () => {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background md:hidden">
-        <div className="flex items-center justify-around h-14">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden safe-area-inset-bottom">
+        <div className="flex items-center justify-around h-14 px-2">
           <Link to="/">
             <MobileNavIcon icon={<Home className="w-6 h-6" />} active />
           </Link>
