@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useNotifications } from './useNotifications';
 
 export interface CommentWithProfile {
   id: string;
@@ -16,6 +17,7 @@ export interface CommentWithProfile {
 export const useComments = (postId: string) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { notifyComment } = useNotifications();
 
   const { data: comments, isLoading } = useQuery({
     queryKey: ['comments', postId],
@@ -55,10 +57,19 @@ export const useComments = (postId: string) => {
         content,
       });
       if (error) throw error;
+      return content;
     },
-    onSuccess: () => {
+    onSuccess: async (content) => {
       queryClient.invalidateQueries({ queryKey: ['comments', postId] });
       queryClient.invalidateQueries({ queryKey: ['posts'] });
+      // Notify post owner about the comment
+      const { data: post } = await supabase.from('posts').select('user_id').eq('id', postId).single();
+      if (post && post.user_id !== user?.id) {
+        const { data: profile } = await supabase.from('profiles').select('username').eq('id', user!.id).single();
+        if (profile) {
+          notifyComment(profile.username, content);
+        }
+      }
     },
   });
 

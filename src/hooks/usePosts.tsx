@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useNotifications } from './useNotifications';
 
 export interface PostWithDetails {
   id: string;
@@ -22,6 +23,7 @@ export interface PostWithDetails {
 export const usePosts = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { notifyLike } = useNotifications();
 
   const { data: posts, isLoading } = useQuery({
     queryKey: ['posts'],
@@ -82,9 +84,21 @@ export const usePosts = () => {
         user_id: user!.id,
       });
       if (error) throw error;
+      return postId;
     },
-    onSuccess: () => {
+    onSuccess: (postId) => {
       queryClient.invalidateQueries({ queryKey: ['posts'] });
+      // Get post owner info and notify (only if not liking own post)
+      const post = posts?.find(p => p.id === postId);
+      if (post && post.user_id !== user?.id) {
+        // Get current user's profile for notification
+        supabase.from('profiles').select('username').eq('id', user!.id).single()
+          .then(({ data: profile }) => {
+            if (profile) {
+              notifyLike(profile.username, post.caption || undefined);
+            }
+          });
+      }
     },
   });
 

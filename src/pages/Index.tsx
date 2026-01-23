@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Stories from '@/components/Stories';
 import Post from '@/components/Post';
@@ -5,9 +6,23 @@ import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
 import { usePosts } from '@/hooks/usePosts';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useNotifications } from '@/hooks/useNotifications';
+import { Button } from '@/components/ui/button';
+import { Bell, BellOff } from 'lucide-react';
 
 const Index = () => {
   const { posts, isLoading } = usePosts();
+  const { isSupported, permission, requestPermission } = useNotifications();
+
+  useEffect(() => {
+    // Auto-request on first visit if not decided
+    if (isSupported && permission === 'default') {
+      const timer = setTimeout(() => {
+        requestPermission();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isSupported, permission, requestPermission]);
 
   return (
     <div className="min-h-screen bg-background dark">

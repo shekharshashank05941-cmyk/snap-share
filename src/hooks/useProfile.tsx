@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useNotifications } from './useNotifications';
 
 export interface Profile {
   id: string;
@@ -19,6 +20,7 @@ export interface Profile {
 export const useProfile = (username?: string) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { notifyFollow } = useNotifications();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['profile', username],
@@ -88,9 +90,15 @@ export const useProfile = (username?: string) => {
         following_id: followingId,
       });
       if (error) throw error;
+      return followingId;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
+      // Notify the person being followed
+      const { data: followerProfile } = await supabase.from('profiles').select('username').eq('id', user!.id).single();
+      if (followerProfile) {
+        notifyFollow(followerProfile.username);
+      }
     },
   });
 
