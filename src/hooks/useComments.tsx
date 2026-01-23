@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { useNotifications } from './useNotifications';
+import { notifyComment } from '@/lib/notifications';
 
 export interface CommentWithProfile {
   id: string;
@@ -17,7 +17,6 @@ export interface CommentWithProfile {
 export const useComments = (postId: string) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { notifyComment } = useNotifications();
 
   const { data: comments, isLoading } = useQuery({
     queryKey: ['comments', postId],

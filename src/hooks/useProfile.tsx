@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { useNotifications } from './useNotifications';
+import { notifyFollow } from '@/lib/notifications';
 
 export interface Profile {
   id: string;
@@ -20,7 +20,6 @@ export interface Profile {
 export const useProfile = (username?: string) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { notifyFollow } = useNotifications();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['profile', username],
