@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Grid3X3, Film, Bookmark, Settings, BadgeCheck, MapPin, Link as LinkIcon, Calendar, Heart, MessageCircle, X } from 'lucide-react';
+import { Grid3X3, Film, Bookmark, Settings, BadgeCheck, Link as LinkIcon, Calendar, Heart, MessageCircle, X } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { usePosts, PostWithDetails } from '@/hooks/usePosts';
 import Navbar from '@/components/Navbar';
 import MobileNav from '@/components/MobileNav';
 import CommentsModal from '@/components/CommentsModal';
+import FollowersModal from '@/components/FollowersModal';
+import EditProfileModal from '@/components/EditProfileModal';
+import SettingsModal from '@/components/SettingsModal';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow, format } from 'date-fns';
@@ -21,6 +24,10 @@ const Profile = () => {
   const [selectedPost, setSelectedPost] = useState<PostWithDetails | null>(null);
   const [showComments, setShowComments] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [showFollowers, setShowFollowers] = useState(false);
+  const [showFollowing, setShowFollowing] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const userPosts = posts?.filter((post) => post.profile.username === username) || [];
   const userReels = userPosts.filter((post) => post.is_reel);
@@ -130,10 +137,20 @@ const Profile = () => {
               <div className="flex items-center gap-2">
                 {isOwnProfile ? (
                   <>
-                    <Button variant="secondary" size="sm" className="rounded-lg">
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="rounded-lg"
+                      onClick={() => setShowEditProfile(true)}
+                    >
                       Edit Profile
                     </Button>
-                    <Button variant="ghost" size="icon" className="rounded-lg">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="rounded-lg"
+                      onClick={() => setShowSettings(true)}
+                    >
                       <Settings className="w-5 h-5" />
                     </Button>
                   </>
@@ -167,6 +184,7 @@ const Profile = () => {
               <motion.div 
                 className="bg-card border border-border rounded-xl p-3 md:p-4 min-w-[80px] text-center cursor-pointer"
                 whileHover={{ scale: 1.02 }}
+                onClick={() => setShowFollowers(true)}
               >
                 <p className="text-lg md:text-xl font-bold">{profile.followers_count}</p>
                 <p className="text-xs text-muted-foreground">followers</p>
@@ -174,6 +192,7 @@ const Profile = () => {
               <motion.div 
                 className="bg-card border border-border rounded-xl p-3 md:p-4 min-w-[80px] text-center cursor-pointer"
                 whileHover={{ scale: 1.02 }}
+                onClick={() => setShowFollowing(true)}
               >
                 <p className="text-lg md:text-xl font-bold">{profile.following_count}</p>
                 <p className="text-xs text-muted-foreground">following</p>
@@ -431,6 +450,41 @@ const Profile = () => {
           }}
         />
       )}
+
+      {/* Followers/Following Modal */}
+      {profile && (
+        <>
+          <FollowersModal
+            isOpen={showFollowers}
+            onClose={() => setShowFollowers(false)}
+            userId={profile.id}
+            type="followers"
+            username={profile.username}
+          />
+          <FollowersModal
+            isOpen={showFollowing}
+            onClose={() => setShowFollowing(false)}
+            userId={profile.id}
+            type="following"
+            username={profile.username}
+          />
+        </>
+      )}
+
+      {/* Edit Profile Modal */}
+      {profile && (
+        <EditProfileModal
+          isOpen={showEditProfile}
+          onClose={() => setShowEditProfile(false)}
+          profile={profile}
+        />
+      )}
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+      />
 
       <MobileNav />
     </div>
