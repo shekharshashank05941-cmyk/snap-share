@@ -25,7 +25,7 @@ export const usePosts = () => {
   const queryClient = useQueryClient();
 
   const { data: posts, isLoading } = useQuery({
-    queryKey: ['posts'],
+    queryKey: ['posts', user?.id],
     queryFn: async () => {
       const { data: postsData, error } = await supabase
         .from('posts')
@@ -33,32 +33,48 @@ export const usePosts = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      if (!postsData.length) return [];
 
-      // Get likes and comments counts for each post
-      const postsWithDetails = await Promise.all(
-        postsData.map(async (post) => {
-          const [profileResult, likesResult, commentsResult, userLikeResult] = await Promise.all([
-            supabase.from('profiles').select('username, avatar_url').eq('id', post.user_id).single(),
-            supabase.from('likes').select('id', { count: 'exact' }).eq('post_id', post.id),
-            supabase.from('comments').select('id', { count: 'exact' }).eq('post_id', post.id),
-            user
-              ? supabase.from('likes').select('id').eq('post_id', post.id).eq('user_id', user.id).maybeSingle()
-              : Promise.resolve({ data: null }),
-          ]);
+      // Batch fetch all related data in parallel
+      const postIds = postsData.map(p => p.id);
+      const userIds = [...new Set(postsData.map(p => p.user_id))];
 
-          return {
-            ...post,
-            profile: profileResult.data || { username: 'unknown', avatar_url: null },
-            likes_count: likesResult.count || 0,
-            comments_count: commentsResult.count || 0,
-            is_liked: !!userLikeResult.data,
-            is_saved: false,
-          } as PostWithDetails;
-        })
+      const [profilesResult, likesResult, commentsResult, userLikesResult] = await Promise.all([
+        supabase.from('profiles').select('id, username, avatar_url').in('id', userIds),
+        supabase.from('likes').select('post_id'),
+        supabase.from('comments').select('post_id'),
+        user
+          ? supabase.from('likes').select('post_id').eq('user_id', user.id).in('post_id', postIds)
+          : Promise.resolve({ data: [] }),
+      ]);
+
+      // Create lookup maps for O(1) access
+      const profilesMap = new Map(
+        (profilesResult.data || []).map(p => [p.id, { username: p.username, avatar_url: p.avatar_url }])
       );
+      
+      const likesCountMap = new Map<string, number>();
+      (likesResult.data || []).forEach(like => {
+        likesCountMap.set(like.post_id, (likesCountMap.get(like.post_id) || 0) + 1);
+      });
+      
+      const commentsCountMap = new Map<string, number>();
+      (commentsResult.data || []).forEach(comment => {
+        commentsCountMap.set(comment.post_id, (commentsCountMap.get(comment.post_id) || 0) + 1);
+      });
+      
+      const userLikedPosts = new Set((userLikesResult.data || []).map(l => l.post_id));
 
-      return postsWithDetails;
+      return postsData.map(post => ({
+        ...post,
+        profile: profilesMap.get(post.user_id) || { username: 'unknown', avatar_url: null },
+        likes_count: likesCountMap.get(post.id) || 0,
+        comments_count: commentsCountMap.get(post.id) || 0,
+        is_liked: userLikedPosts.has(post.id),
+        is_saved: false,
+      })) as PostWithDetails[];
     },
+    staleTime: 30000, // Cache for 30 seconds to prevent unnecessary refetches
   });
 
   const createPost = useMutation({
