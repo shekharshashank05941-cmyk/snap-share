@@ -141,6 +141,12 @@ export const usePosts = () => {
     },
   });
 
+  const { refetch } = useQuery({
+    queryKey: ['posts', user?.id],
+    queryFn: async () => posts,
+    enabled: false,
+  });
+
   return {
     posts,
     isLoading,
@@ -148,5 +154,6 @@ export const usePosts = () => {
     likePost,
     unlikePost,
     deletePost,
+    refetch: queryClient.invalidateQueries.bind(queryClient, { queryKey: ['posts'] }),
   };
 };
