@@ -33,7 +33,7 @@ const Auth = () => {
         {/* Logo */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-pink-500 to-purple-500 bg-clip-text text-transparent">
-            Picgram
+            Subbhu Bhai
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">
             Sign in to see photos and videos from your friends.

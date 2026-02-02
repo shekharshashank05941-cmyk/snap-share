@@ -43,7 +43,7 @@ const CommentsModal = ({ postId, isOpen, onClose }: CommentsModalProps) => {
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border">
-              <h2 className="font-semibold text-lg">Comments</h2>
+              <h2 className="font-semibold text-lg text-foreground">Comments</h2>
               <motion.button 
                 onClick={onClose} 
                 className="text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-secondary transition-colors"
@@ -84,9 +84,9 @@ const CommentsModal = ({ postId, isOpen, onClose }: CommentsModalProps) => {
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <Link to={`/profile/${comment.profile.username}`}>
-                            <span className="font-semibold text-sm hover:underline">{comment.profile.username}</span>
+                            <span className="font-semibold text-sm hover:underline text-foreground">{comment.profile.username}</span>
                           </Link>
-                          <span className="text-sm ml-2 break-words">{comment.content}</span>
+                          <span className="text-sm ml-2 break-words text-foreground">{comment.content}</span>
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
                           {user?.id === comment.user_id && (

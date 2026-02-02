@@ -146,7 +146,7 @@ const FollowersModal = ({ isOpen, onClose, userId, type, username }: FollowersMo
         >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-border">
-            <h2 className="text-lg font-semibold capitalize">{type}</h2>
+            <h2 className="text-lg font-semibold capitalize text-foreground">{type}</h2>
             <button
               onClick={onClose}
               className="p-1 hover:bg-secondary rounded-full transition-colors"
@@ -188,7 +188,7 @@ const FollowersModal = ({ isOpen, onClose, userId, type, username }: FollowersMo
                         className="w-12 h-12 rounded-full object-cover"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate">{followUser.username}</p>
+                        <p className="font-semibold text-sm truncate text-foreground">{followUser.username}</p>
                         {followUser.full_name && (
                           <p className="text-sm text-muted-foreground truncate">{followUser.full_name}</p>
                         )}
