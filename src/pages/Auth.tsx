@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import subbhuBhaiLogo from '@/assets/subbhu-bhai-logo.png';
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
@@ -24,20 +25,49 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 flex items-center justify-center px-4 py-8 relative overflow-hidden">
+      {/* Background gradient orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/20 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 -left-40 w-80 h-80 bg-pink-500/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-20 w-60 h-60 bg-purple-500/20 rounded-full blur-3xl" />
+      </div>
+      
       <motion.div
-        className="w-full max-w-sm"
+        className="relative w-full max-w-sm"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-pink-500 to-purple-500 bg-clip-text text-transparent">
+          <motion.div 
+            className="flex justify-center mb-4"
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+          >
+            <img 
+              src={subbhuBhaiLogo} 
+              alt="Subbhu Bhai" 
+              className="w-24 h-24 rounded-2xl shadow-2xl shadow-primary/30"
+            />
+          </motion.div>
+          <motion.h1 
+            className="text-4xl font-bold bg-gradient-to-r from-primary via-pink-500 to-purple-500 bg-clip-text text-transparent"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
             Subbhu Bhai
-          </h1>
-          <p className="text-muted-foreground mt-2 text-sm">
+          </motion.h1>
+          <motion.p 
+            className="text-muted-foreground mt-2 text-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
             Sign in to see photos and videos from your friends.
-          </p>
+          </motion.p>
         </div>
 
         {/* Google Login Card */}
