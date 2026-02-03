@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import CreatePostModal from './CreatePostModal';
 import SearchModal from './SearchModal';
+import subbhuBhaiLogo from '@/assets/subbhu-bhai-logo.png';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,11 +31,17 @@ const Navbar = () => {
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/">
-            <motion.h1 
-              className="text-2xl font-bold bg-gradient-to-r from-primary via-pink-500 to-purple-500 bg-clip-text text-transparent cursor-pointer"
-              whileHover={{ scale: 1.05 }}
+          <Link to="/" className="flex items-center gap-2">
+            <motion.img 
+              src={subbhuBhaiLogo}
+              alt="Subbhu Bhai"
+              className="w-9 h-9 rounded-lg object-contain"
+              whileHover={{ scale: 1.05, rotate: 5 }}
               whileTap={{ scale: 0.95 }}
+            />
+            <motion.h1 
+              className="text-xl font-bold bg-gradient-to-r from-primary via-pink-500 to-purple-500 bg-clip-text text-transparent cursor-pointer hidden sm:block"
+              whileHover={{ scale: 1.02 }}
             >
               Subbhu Bhai
             </motion.h1>
