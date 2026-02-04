@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
 import PullToRefresh from '@/components/PullToRefresh';
 import { usePosts } from '@/hooks/usePosts';
+import { useBotLikes } from '@/hooks/useBotLikes';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -16,6 +17,9 @@ const Index = () => {
   const { posts, isLoading, refetch } = usePosts();
   const { isSupported, permission, requestPermission } = useNotifications();
   const isMobile = useIsMobile();
+  
+  // Enable bot likes simulation
+  useBotLikes(posts);
 
   useEffect(() => {
     if (isSupported && permission === 'default') {

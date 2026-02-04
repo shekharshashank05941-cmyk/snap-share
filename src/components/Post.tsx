@@ -261,15 +261,27 @@ const Post = ({ post, index }: PostProps) => {
             </motion.button>
           </div>
 
-          {/* Likes with animation */}
-          <motion.p 
-            className="font-bold text-sm text-foreground mb-2"
-            key={post.likes_count}
-            initial={{ scale: 1.1 }}
-            animate={{ scale: 1 }}
-          >
-            {post.likes_count.toLocaleString()} {post.likes_count === 1 ? 'like' : 'likes'}
-          </motion.p>
+          {/* Likes & Comments stats */}
+          <div className="flex items-center gap-4 mb-2">
+            <motion.p 
+              className="font-bold text-sm text-foreground flex items-center gap-1.5"
+              key={post.likes_count}
+              initial={{ scale: 1.1 }}
+              animate={{ scale: 1 }}
+            >
+              <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+              {post.likes_count.toLocaleString()} {post.likes_count === 1 ? 'like' : 'likes'}
+            </motion.p>
+            <motion.button 
+              className="font-bold text-sm text-foreground flex items-center gap-1.5 hover:text-primary transition-colors"
+              onClick={() => setShowComments(true)}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <MessageCircle className="w-4 h-4 text-primary" />
+              {post.comments_count.toLocaleString()} {post.comments_count === 1 ? 'comment' : 'comments'}
+            </motion.button>
+          </div>
 
           {/* Caption */}
           {post.caption && (
@@ -281,14 +293,13 @@ const Post = ({ post, index }: PostProps) => {
             </p>
           )}
 
-          {/* View comments button */}
-          {post.comments_count > 0 && (
+          {/* View comments button - only show if more than 2 comments */}
+          {post.comments_count > 2 && (
             <motion.button 
               className="text-sm text-muted-foreground mt-2 hover:text-primary transition-colors flex items-center gap-1.5"
               onClick={() => setShowComments(true)}
               whileHover={{ x: 3 }}
             >
-              <MessageCircle className="w-4 h-4" />
               View all {post.comments_count} comments
             </motion.button>
           )}
