@@ -1,7 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { notifyLike } from '@/lib/notifications';
+
+const POSTS_PER_PAGE = 5;
 
 export interface PostWithDetails {
   id: string;
@@ -24,16 +26,23 @@ export const usePosts = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: posts, isLoading } = useQuery({
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ['posts', user?.id],
-    queryFn: async () => {
+    queryFn: async ({ pageParam = 0 }) => {
       const { data: postsData, error } = await supabase
         .from('posts')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(pageParam, pageParam + POSTS_PER_PAGE - 1);
 
       if (error) throw error;
-      if (!postsData.length) return [];
+      if (!postsData.length) return { posts: [], nextCursor: null };
 
       // Batch fetch all related data in parallel
       const postIds = postsData.map(p => p.id);
@@ -41,8 +50,8 @@ export const usePosts = () => {
 
       const [profilesResult, likesResult, commentsResult, userLikesResult] = await Promise.all([
         supabase.from('profiles').select('id, username, avatar_url').in('id', userIds),
-        supabase.from('likes').select('post_id'),
-        supabase.from('comments').select('post_id'),
+        supabase.from('likes').select('post_id').in('post_id', postIds),
+        supabase.from('comments').select('post_id').in('post_id', postIds),
         user
           ? supabase.from('likes').select('post_id').eq('user_id', user.id).in('post_id', postIds)
           : Promise.resolve({ data: [] }),
@@ -65,7 +74,7 @@ export const usePosts = () => {
       
       const userLikedPosts = new Set((userLikesResult.data || []).map(l => l.post_id));
 
-      return postsData.map(post => ({
+      const posts = postsData.map(post => ({
         ...post,
         profile: profilesMap.get(post.user_id) || { username: 'unknown', avatar_url: null },
         likes_count: likesCountMap.get(post.id) || 0,
@@ -73,9 +82,19 @@ export const usePosts = () => {
         is_liked: userLikedPosts.has(post.id),
         is_saved: false,
       })) as PostWithDetails[];
+
+      return {
+        posts,
+        nextCursor: postsData.length === POSTS_PER_PAGE ? pageParam + POSTS_PER_PAGE : null,
+      };
     },
-    staleTime: 30000, // Cache for 30 seconds to prevent unnecessary refetches
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    initialPageParam: 0,
+    staleTime: 30000,
   });
+
+  // Flatten all pages into a single array
+  const posts = data?.pages.flatMap(page => page.posts) ?? [];
 
   const createPost = useMutation({
     mutationFn: async ({ mediaUrl, caption, isReel }: { mediaUrl: string; caption: string; isReel: boolean }) => {
@@ -141,12 +160,6 @@ export const usePosts = () => {
     },
   });
 
-  const { refetch } = useQuery({
-    queryKey: ['posts', user?.id],
-    queryFn: async () => posts,
-    enabled: false,
-  });
-
   return {
     posts,
     isLoading,
@@ -154,6 +167,9 @@ export const usePosts = () => {
     likePost,
     unlikePost,
     deletePost,
-    refetch: queryClient.invalidateQueries.bind(queryClient, { queryKey: ['posts'] }),
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch: () => queryClient.invalidateQueries({ queryKey: ['posts'] }),
   };
 };

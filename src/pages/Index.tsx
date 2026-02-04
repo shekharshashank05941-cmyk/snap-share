@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Stories from '@/components/Stories';
@@ -11,12 +11,13 @@ import { useBotLikes } from '@/hooks/useBotLikes';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Sparkles, ImageIcon } from 'lucide-react';
+import { Sparkles, ImageIcon, Loader2 } from 'lucide-react';
 
 const Index = () => {
-  const { posts, isLoading, refetch } = usePosts();
+  const { posts, isLoading, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = usePosts();
   const { isSupported, permission, requestPermission } = useNotifications();
   const isMobile = useIsMobile();
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   
   // Enable bot likes simulation
   useBotLikes(posts);
@@ -29,6 +30,24 @@ const Index = () => {
       return () => clearTimeout(timer);
     }
   }, [isSupported, permission, requestPermission]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleRefresh = useCallback(async () => {
     await refetch();
@@ -84,9 +103,38 @@ const Index = () => {
             </p>
           </motion.div>
         ) : (
-          posts?.map((post, index) => (
-            <Post key={post.id} post={post} index={index} />
-          ))
+          <>
+            {posts?.map((post, index) => (
+              <Post key={post.id} post={post} index={index} />
+            ))}
+            
+            {/* Load more trigger */}
+            <div ref={loadMoreRef} className="py-4 flex justify-center">
+              {isFetchingNextPage ? (
+                <motion.div
+                  className="flex items-center gap-2 text-muted-foreground"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                  <span className="text-sm">Loading more posts...</span>
+                </motion.div>
+              ) : hasNextPage ? (
+                <span className="text-sm text-muted-foreground">Scroll for more</span>
+              ) : posts.length > 0 ? (
+                <motion.div 
+                  className="text-center py-4"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-primary/20 to-pink-500/20 flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-primary" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">You're all caught up!</p>
+                </motion.div>
+              ) : null}
+            </div>
+          </>
         )}
       </div>
     </>
