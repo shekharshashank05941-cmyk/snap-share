@@ -40,7 +40,7 @@ const Navbar = () => {
               whileTap={{ scale: 0.95 }}
             />
             <motion.h1 
-              className="text-xl font-bold bg-gradient-to-r from-primary via-pink-500 to-purple-500 bg-clip-text text-transparent cursor-pointer hidden sm:block"
+              className="text-lg font-bold bg-gradient-to-r from-primary via-pink-500 to-purple-500 bg-clip-text text-transparent cursor-pointer hidden sm:block whitespace-nowrap"
               whileHover={{ scale: 1.02 }}
             >
               Subbhu Bhai
