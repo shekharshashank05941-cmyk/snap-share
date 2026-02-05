@@ -296,7 +296,7 @@ const Post = ({ post, index }: PostProps) => {
               <Link to={`/profile/${post.profile.username}`} className="font-bold mr-2 hover:text-primary transition-colors">
                 {post.profile.username}
               </Link>
-              <span className="text-foreground/90">{post.caption}</span>
+              <span className="text-white">{post.caption}</span>
             </p>
           )}
 
@@ -320,7 +320,7 @@ const Post = ({ post, index }: PostProps) => {
                   placeholder="Add a comment..."
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  className="w-full bg-secondary/30 hover:bg-secondary/50 focus:bg-secondary/50 rounded-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-muted-foreground"
+                  className="w-full bg-secondary/30 hover:bg-secondary/50 focus:bg-secondary/50 rounded-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-white/60"
                 />
               </div>
               <motion.button 
