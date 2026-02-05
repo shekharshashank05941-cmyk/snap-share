@@ -143,16 +143,23 @@ const Post = ({ post, index }: PostProps) => {
 
         {/* Media */}
         <div
-          className="relative aspect-square cursor-pointer bg-muted/50 overflow-hidden"
+          className={`relative cursor-pointer overflow-hidden ${
+            post.is_reel ? 'aspect-video bg-black' : 'aspect-square bg-muted/50'
+          }`}
           onDoubleClick={handleDoubleTap}
         >
           {post.is_reel ? (
-            <video
-              src={post.media_url}
-              controls
-              className="w-full h-full object-cover"
-              playsInline
-            />
+            <div className="relative w-full h-full flex items-center justify-center">
+              <video
+                src={post.media_url}
+                controls
+                className="w-full h-full object-contain"
+                playsInline
+                preload="metadata"
+              />
+              {/* Play button overlay gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/10 pointer-events-none" />
+            </div>
           ) : (
             <motion.img
               src={post.media_url}
