@@ -84,7 +84,7 @@ const CommentsModal = ({ postId, isOpen, onClose }: CommentsModalProps) => {
               </div>
 
               {/* Comments List */}
-              <div className="relative flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 min-h-[200px] max-h-[50vh]">
+              <div className="relative flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 min-h-[200px] max-h-[50vh] custom-scrollbar touch-scroll">
                 {isLoading ? (
                   <div className="flex flex-col items-center justify-center py-12 gap-3">
                     <motion.div
@@ -200,7 +200,7 @@ const CommentsModal = ({ postId, isOpen, onClose }: CommentsModalProps) => {
                         placeholder="Write a comment..."
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
-                        className="w-full bg-secondary/50 hover:bg-secondary focus:bg-secondary rounded-2xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-muted-foreground text-foreground"
+                        className="w-full bg-secondary/50 hover:bg-secondary focus:bg-secondary rounded-2xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-white/60 text-foreground"
                       />
                     </div>
                     

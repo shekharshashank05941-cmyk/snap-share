@@ -148,6 +148,34 @@
   }
 }
 
+/* Disable native browser pull-to-refresh */
+html, body {
+  overscroll-behavior-y: contain;
+}
+
+/* Custom scrollbar for comments/likes sections */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--primary) / 0.3) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.3);
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.5);
+}
+
 /* Animations */
 @keyframes heart-pop {
   0% { transform: scale(1); }
