@@ -53,13 +53,26 @@ const Auth = () => {
             />
           </motion.div>
           <motion.h1 
-            className="text-4xl font-bold bg-gradient-to-r from-primary via-pink-500 to-purple-500 bg-clip-text text-transparent"
+            className="text-4xl font-extrabold tracking-tight"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            Subbhu Bhai
+            <span className="bg-gradient-to-r from-primary via-pink-500 to-purple-500 bg-clip-text text-transparent">
+              Subbhu Bhai
+            </span>
+            <span className="text-lg font-medium text-muted-foreground ml-1 tracking-wider uppercase">
+              verse
+            </span>
           </motion.h1>
+          <motion.p 
+            className="text-muted-foreground mt-1 text-xs italic tracking-wide"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.25 }}
+          >
+            ✨ Your World. Your Vibe. Your Verse.
+          </motion.p>
           <motion.p 
             className="text-muted-foreground mt-2 text-sm"
             initial={{ opacity: 0 }}
