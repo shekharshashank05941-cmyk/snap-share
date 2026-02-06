@@ -1,8 +1,9 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Camera, X, Upload, Loader2 } from 'lucide-react';
+import { X, Upload, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { useStories } from '@/hooks/useStories';
 import { toast } from 'sonner';
 
@@ -14,6 +15,7 @@ interface CreateStoryModalProps {
 const CreateStoryModal = ({ isOpen, onClose }: CreateStoryModalProps) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { createStory } = useStories();
 
@@ -36,11 +38,24 @@ const CreateStoryModal = ({ isOpen, onClose }: CreateStoryModalProps) => {
   const handleSubmit = async () => {
     if (!selectedFile) return;
 
+    setUploadProgress(0);
+
+    // Simulate progress
+    let fakeProgress = 0;
+    const progressInterval = setInterval(() => {
+      fakeProgress = Math.min(fakeProgress + Math.random() * 18, 90);
+      setUploadProgress(Math.round(fakeProgress));
+    }, 200);
+
     try {
       await createStory.mutateAsync(selectedFile);
+      clearInterval(progressInterval);
+      setUploadProgress(100);
       toast.success('Story posted!');
-      handleClose();
+      setTimeout(() => handleClose(), 400);
     } catch (error: any) {
+      clearInterval(progressInterval);
+      setUploadProgress(0);
       toast.error(error.message || 'Failed to post story');
     }
   };
@@ -48,8 +63,11 @@ const CreateStoryModal = ({ isOpen, onClose }: CreateStoryModalProps) => {
   const handleClose = () => {
     setSelectedFile(null);
     setPreview(null);
+    setUploadProgress(0);
     onClose();
   };
+
+  const isUploading = createStory.isPending;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -77,15 +95,17 @@ const CreateStoryModal = ({ isOpen, onClose }: CreateStoryModalProps) => {
               ) : (
                 <img src={preview} alt="Story preview" className="w-full h-full object-contain" />
               )}
-              <button
-                onClick={() => {
-                  setSelectedFile(null);
-                  setPreview(null);
-                }}
-                className="absolute top-2 right-2 p-1 bg-black/50 rounded-full hover:bg-black/70"
-              >
-                <X className="w-5 h-5 text-white" />
-              </button>
+              {!isUploading && (
+                <button
+                  onClick={() => {
+                    setSelectedFile(null);
+                    setPreview(null);
+                  }}
+                  className="absolute top-2 right-2 p-1 bg-black/50 rounded-full hover:bg-black/70"
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+              )}
             </div>
           )}
 
@@ -97,20 +117,45 @@ const CreateStoryModal = ({ isOpen, onClose }: CreateStoryModalProps) => {
             className="hidden"
           />
 
+          {/* Upload progress */}
+          {isUploading && (
+            <motion.div
+              className="space-y-2"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+            >
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                  <span>Uploading story...</span>
+                </div>
+                <motion.span
+                  className="font-bold text-primary text-base tabular-nums"
+                  key={uploadProgress}
+                  initial={{ scale: 1.2 }}
+                  animate={{ scale: 1 }}
+                >
+                  {uploadProgress}%
+                </motion.span>
+              </div>
+              <Progress value={uploadProgress} className="h-2.5 bg-secondary" />
+            </motion.div>
+          )}
+
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleClose} className="flex-1">
+            <Button variant="outline" onClick={handleClose} className="flex-1" disabled={isUploading}>
               Cancel
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={!selectedFile || createStory.isPending}
+              disabled={!selectedFile || isUploading}
               className="flex-1 instagram-gradient text-white"
             >
-              {createStory.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Posting...
-                </>
+              {isUploading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {uploadProgress}%
+                </span>
               ) : (
                 'Share Story'
               )}
