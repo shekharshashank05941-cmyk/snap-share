@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Trash2, Loader2, Sparkles } from 'lucide-react';
+import VideoPlayer from './VideoPlayer';
+import { useVideoVisibility } from '@/hooks/useVideoVisibility';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { usePosts, PostWithDetails } from '@/hooks/usePosts';
@@ -28,6 +30,7 @@ const Post = ({ post, index }: PostProps) => {
   const { user } = useAuth();
   const { likePost, unlikePost, deletePost } = usePosts();
   const { addComment } = useComments(post.id);
+  const { ref: videoRef, isVisible } = useVideoVisibility(0.5);
 
   const handleLike = () => {
     if (!user) {
@@ -143,23 +146,20 @@ const Post = ({ post, index }: PostProps) => {
 
         {/* Media */}
         <div
+          ref={post.is_reel ? videoRef : undefined}
           className={`relative cursor-pointer overflow-hidden ${
             post.is_reel ? 'aspect-video bg-black' : 'aspect-square bg-muted/50'
           }`}
           onDoubleClick={handleDoubleTap}
         >
           {post.is_reel ? (
-            <div className="relative w-full h-full flex items-center justify-center">
-              <video
-                src={post.media_url}
-                controls
-                className="w-full h-full object-contain"
-                playsInline
-                preload="metadata"
-              />
-              {/* Play button overlay gradient */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/10 pointer-events-none" />
-            </div>
+            <VideoPlayer
+              src={post.media_url}
+              className="w-full h-full"
+              isVisible={isVisible}
+              autoPlay={isVisible}
+              loop
+            />
           ) : (
             <motion.img
               src={post.media_url}
@@ -192,8 +192,10 @@ const Post = ({ post, index }: PostProps) => {
             )}
           </AnimatePresence>
           
-          {/* Gradient overlay at bottom */}
-          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
+          {/* Gradient overlay at bottom (only for images) */}
+          {!post.is_reel && (
+            <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
+          )}
         </div>
 
         {/* Actions */}

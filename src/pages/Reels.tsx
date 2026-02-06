@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Volume2, VolumeX } from 'lucide-react';
+import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Volume2, VolumeX, Play, Pause } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import MobileNav from '@/components/MobileNav';
@@ -13,6 +13,11 @@ const Reels = () => {
   const { user } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [muted, setMuted] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [showControls, setShowControls] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hideTimeout = useRef<NodeJS.Timeout>();
 
   const reels = posts?.filter((post) => post.is_reel) || [];
   const currentReel = reels[currentIndex];
@@ -20,8 +25,10 @@ const Reels = () => {
   const handleScroll = (direction: 'up' | 'down') => {
     if (direction === 'down' && currentIndex < reels.length - 1) {
       setCurrentIndex(currentIndex + 1);
+      setIsPlaying(true);
     } else if (direction === 'up' && currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
+      setIsPlaying(true);
     }
   };
 
@@ -33,6 +40,41 @@ const Reels = () => {
       likePost.mutate(currentReel.id);
     }
   };
+
+  const togglePlay = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play().then(() => setIsPlaying(true)).catch(() => {});
+    } else {
+      video.pause();
+      setIsPlaying(false);
+    }
+  }, []);
+
+  const showControlsTemporary = useCallback(() => {
+    setShowControls(true);
+    if (hideTimeout.current) clearTimeout(hideTimeout.current);
+    hideTimeout.current = setTimeout(() => setShowControls(false), 3000);
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const handleTime = () => {
+      setProgress((video.currentTime / video.duration) * 100 || 0);
+    };
+    video.addEventListener('timeupdate', handleTime);
+    return () => video.removeEventListener('timeupdate', handleTime);
+  }, [currentIndex]);
+
+  // Auto-play on reel change
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video && isPlaying) {
+      video.play().catch(() => {});
+    }
+  }, [currentIndex]);
 
   if (isLoading) {
     return (
@@ -76,8 +118,12 @@ const Reels = () => {
             initial={{ opacity: 0, y: 100 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -100 }}
+            onClick={togglePlay}
+            onMouseMove={showControlsTemporary}
+            onTouchStart={showControlsTemporary}
           >
             <video
+              ref={videoRef}
               src={currentReel?.media_url}
               className="w-full h-full object-cover"
               autoPlay
@@ -86,25 +132,38 @@ const Reels = () => {
               playsInline
             />
 
-            {/* Overlay Controls */}
-            <div className="absolute inset-0 flex">
-              {/* Left side - tap to go back */}
-              <div 
-                className="w-1/3 h-full"
-                onClick={() => handleScroll('up')}
-              />
-              
-              {/* Right side - tap to go forward */}
-              <div 
-                className="w-2/3 h-full"
-                onClick={() => handleScroll('down')}
+            {/* Center play indicator */}
+            <AnimatePresence>
+              {!isPlaying && (
+                <motion.div
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <div className="w-16 h-16 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center border border-white/20">
+                    <Play className="w-7 h-7 text-white ml-1" fill="white" />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Bottom gradient */}
+            <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
+
+            {/* Progress bar at bottom */}
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+              <motion.div
+                className="h-full bg-gradient-to-r from-primary to-pink-500"
+                style={{ width: `${progress}%` }}
+                transition={{ duration: 0.1 }}
               />
             </div>
 
             {/* Sound toggle */}
             <button
-              className="absolute top-4 right-4 p-2 bg-black/50 rounded-full"
-              onClick={() => setMuted(!muted)}
+              className="absolute top-4 right-4 p-2.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10"
+              onClick={(e) => { e.stopPropagation(); setMuted(!muted); }}
             >
               {muted ? (
                 <VolumeX className="w-5 h-5 text-white" />
@@ -114,50 +173,54 @@ const Reels = () => {
             </button>
 
             {/* Actions */}
-            <div className="absolute right-4 bottom-20 flex flex-col gap-6">
+            <div className="absolute right-3 bottom-24 flex flex-col gap-5">
               <motion.button
-                onClick={handleLike}
+                onClick={(e) => { e.stopPropagation(); handleLike(); }}
                 whileTap={{ scale: 0.8 }}
                 className="flex flex-col items-center gap-1"
               >
-                <Heart
-                  className={`w-7 h-7 ${
-                    currentReel?.is_liked ? 'text-primary fill-primary' : 'text-white'
-                  }`}
-                />
-                <span className="text-white text-xs">{currentReel?.likes_count}</span>
+                <div className="p-2 bg-black/30 backdrop-blur-sm rounded-full">
+                  <Heart
+                    className={`w-6 h-6 ${
+                      currentReel?.is_liked ? 'text-red-500 fill-red-500' : 'text-white'
+                    }`}
+                  />
+                </div>
+                <span className="text-white text-xs font-medium">{currentReel?.likes_count}</span>
               </motion.button>
               
-              <button className="flex flex-col items-center gap-1">
-                <MessageCircle className="w-7 h-7 text-white" />
-                <span className="text-white text-xs">{currentReel?.comments_count}</span>
+              <button className="flex flex-col items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                <div className="p-2 bg-black/30 backdrop-blur-sm rounded-full">
+                  <MessageCircle className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-white text-xs font-medium">{currentReel?.comments_count}</span>
               </button>
               
-              <button>
-                <Send className="w-7 h-7 text-white" />
+              <button onClick={(e) => e.stopPropagation()}>
+                <div className="p-2 bg-black/30 backdrop-blur-sm rounded-full">
+                  <Send className="w-6 h-6 text-white" />
+                </div>
               </button>
               
-              <button>
-                <Bookmark className="w-7 h-7 text-white" />
-              </button>
-              
-              <button>
-                <MoreHorizontal className="w-7 h-7 text-white" />
+              <button onClick={(e) => e.stopPropagation()}>
+                <div className="p-2 bg-black/30 backdrop-blur-sm rounded-full">
+                  <Bookmark className="w-6 h-6 text-white" />
+                </div>
               </button>
             </div>
 
             {/* User info */}
-            <div className="absolute left-4 bottom-20 right-20">
-              <Link to={`/profile/${currentReel?.profile.username}`} className="flex items-center gap-2 mb-2">
+            <div className="absolute left-4 bottom-8 right-20">
+              <Link to={`/profile/${currentReel?.profile.username}`} className="flex items-center gap-2.5 mb-2" onClick={(e) => e.stopPropagation()}>
                 <img
                   src={currentReel?.profile.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop'}
                   alt={currentReel?.profile.username}
-                  className="w-9 h-9 rounded-full object-cover border-2 border-white"
+                  className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-lg"
                 />
-                <span className="text-white font-semibold">{currentReel?.profile.username}</span>
+                <span className="text-white font-bold text-sm">{currentReel?.profile.username}</span>
               </Link>
               {currentReel?.caption && (
-                <p className="text-white text-sm line-clamp-2">{currentReel.caption}</p>
+                <p className="text-white/90 text-sm line-clamp-2 leading-relaxed">{currentReel.caption}</p>
               )}
             </div>
 
@@ -166,7 +229,7 @@ const Reels = () => {
               {reels.map((_, index) => (
                 <div
                   key={index}
-                  className={`h-0.5 flex-1 rounded-full ${
+                  className={`h-0.5 flex-1 rounded-full transition-colors ${
                     index === currentIndex ? 'bg-white' : 'bg-white/30'
                   }`}
                 />

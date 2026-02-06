@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Image, Film, Upload } from 'lucide-react';
+import { X, Image, Film, Upload, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { usePosts } from '@/hooks/usePosts';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 
 interface CreatePostModalProps {
@@ -18,6 +19,7 @@ const CreatePostModal = ({ isOpen, onClose }: CreatePostModalProps) => {
   const [caption, setCaption] = useState('');
   const [isReel, setIsReel] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { createPost } = usePosts();
@@ -36,15 +38,29 @@ const CreatePostModal = ({ isOpen, onClose }: CreatePostModalProps) => {
     if (!file || !user) return;
 
     setUploading(true);
+    setUploadProgress(0);
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      // Simulate progress for upload since supabase doesn't expose xhr progress
+      const totalSize = file.size;
+      const chunkTime = Math.min(totalSize / 100000, 5); // Estimate based on file size
+      let fakeProgress = 0;
+      const progressInterval = setInterval(() => {
+        fakeProgress = Math.min(fakeProgress + Math.random() * 15, 90);
+        setUploadProgress(Math.round(fakeProgress));
+      }, chunkTime * 100);
 
       const { error: uploadError } = await supabase.storage
         .from('media')
         .upload(fileName, file);
 
+      clearInterval(progressInterval);
+
       if (uploadError) throw uploadError;
+
+      setUploadProgress(95);
 
       const { data: { publicUrl } } = supabase.storage
         .from('media')
@@ -56,12 +72,14 @@ const CreatePostModal = ({ isOpen, onClose }: CreatePostModalProps) => {
         isReel,
       });
 
+      setUploadProgress(100);
       toast.success(isReel ? 'Reel posted!' : 'Post created!');
-      handleClose();
+      setTimeout(() => handleClose(), 500);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -70,6 +88,7 @@ const CreatePostModal = ({ isOpen, onClose }: CreatePostModalProps) => {
     setPreview(null);
     setCaption('');
     setIsReel(false);
+    setUploadProgress(0);
     onClose();
   };
 
@@ -154,8 +173,36 @@ const CreatePostModal = ({ isOpen, onClose }: CreatePostModalProps) => {
                     className="w-full bg-secondary rounded-lg p-3 text-sm outline-none resize-none h-24"
                   />
 
+                  {/* Upload progress */}
+                  <AnimatePresence>
+                    {uploading && (
+                      <motion.div
+                        className="space-y-2"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                      >
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                            <span>Uploading {isReel ? 'video' : 'photo'}...</span>
+                          </div>
+                          <motion.span
+                            className="font-bold text-primary text-base tabular-nums"
+                            key={uploadProgress}
+                            initial={{ scale: 1.2 }}
+                            animate={{ scale: 1 }}
+                          >
+                            {uploadProgress}%
+                          </motion.span>
+                        </div>
+                        <Progress value={uploadProgress} className="h-2.5 bg-secondary" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   <div className="flex gap-3">
-                    <Button variant="ghost" onClick={handleClose} className="flex-1">
+                    <Button variant="ghost" onClick={handleClose} className="flex-1" disabled={uploading}>
                       Cancel
                     </Button>
                     <Button
@@ -163,7 +210,14 @@ const CreatePostModal = ({ isOpen, onClose }: CreatePostModalProps) => {
                       disabled={uploading}
                       className="flex-1 instagram-gradient text-white"
                     >
-                      {uploading ? 'Posting...' : 'Share'}
+                      {uploading ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          {uploadProgress}%
+                        </span>
+                      ) : (
+                        'Share'
+                      )}
                     </Button>
                   </div>
                 </div>
