@@ -1,5 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import Navbar from '@/components/Navbar';
 import Stories from '@/components/Stories';
 import Post from '@/components/Post';
@@ -61,12 +60,9 @@ const Index = () => {
         {isLoading ? (
           <>
             {[1, 2, 3].map((i) => (
-              <motion.div 
+              <div 
                 key={i} 
-                className="bg-card/50 border border-border/50 rounded-2xl overflow-hidden backdrop-blur-sm"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
+                className="bg-card/50 border border-border/50 rounded-2xl overflow-hidden"
               >
                 <div className="flex items-center gap-3 p-4">
                   <Skeleton className="w-11 h-11 rounded-full" />
@@ -85,23 +81,19 @@ const Index = () => {
                   <Skeleton className="h-4 w-24" />
                   <Skeleton className="h-3 w-full" />
                 </div>
-              </motion.div>
+              </div>
             ))}
           </>
         ) : posts?.length === 0 ? (
-          <motion.div 
-            className="text-center py-16 px-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary/20 to-pink-500/20 flex items-center justify-center">
+          <div className="text-center py-16 px-6">
+            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
               <ImageIcon className="w-12 h-12 text-primary/60" />
             </div>
             <h3 className="text-xl font-bold text-foreground mb-2">No posts yet</h3>
             <p className="text-muted-foreground max-w-xs mx-auto">
               Follow someone or create a post to get started!
             </p>
-          </motion.div>
+          </div>
         ) : (
           <>
             {posts?.map((post, index) => (
@@ -111,27 +103,19 @@ const Index = () => {
             {/* Load more trigger */}
             <div ref={loadMoreRef} className="py-4 flex justify-center">
               {isFetchingNextPage ? (
-                <motion.div
-                  className="flex items-center gap-2 text-muted-foreground"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
+                <div className="flex items-center gap-2 text-muted-foreground">
                   <Loader2 className="w-5 h-5 animate-spin text-primary" />
                   <span className="text-sm">Loading more posts...</span>
-                </motion.div>
+                </div>
               ) : hasNextPage ? (
                 <span className="text-sm text-muted-foreground">Scroll for more</span>
               ) : posts.length > 0 ? (
-                <motion.div 
-                  className="text-center py-4"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-primary/20 to-pink-500/20 flex items-center justify-center">
+                <div className="text-center py-4">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-primary/10 flex items-center justify-center">
                     <Sparkles className="w-6 h-6 text-primary" />
                   </div>
                   <p className="text-sm text-muted-foreground">You're all caught up!</p>
-                </motion.div>
+                </div>
               ) : null}
             </div>
           </>
@@ -141,14 +125,7 @@ const Index = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 dark">
-      {/* Background gradient orbs */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 -left-40 w-80 h-80 bg-pink-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-20 w-60 h-60 bg-purple-500/10 rounded-full blur-3xl" />
-      </div>
-      
+    <div className="min-h-screen bg-background">
       <Navbar />
       
       <main className="relative pt-20 pb-24 md:pb-8 max-w-5xl mx-auto px-2 sm:px-4">
@@ -156,16 +133,12 @@ const Index = () => {
           {/* Main Feed */}
           <div className="flex-1 max-w-[470px] mx-auto lg:mx-0">
             {/* Feed header */}
-            <motion.div 
-              className="flex items-center gap-2 mb-4 px-1"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div className="p-2 bg-gradient-to-br from-primary/20 to-pink-500/20 rounded-xl">
+            <div className="flex items-center gap-2 mb-4 px-1">
+              <div className="p-2 bg-primary/10 rounded-xl">
                 <Sparkles className="w-5 h-5 text-primary" />
               </div>
               <h2 className="font-bold text-lg text-foreground">Your Feed</h2>
-            </motion.div>
+            </div>
             
             {isMobile ? (
               <PullToRefresh onRefresh={handleRefresh}>

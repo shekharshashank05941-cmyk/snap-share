@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
@@ -9,22 +8,19 @@ const Sidebar = () => {
   const { user } = useAuth();
   const { currentUserProfile } = useProfile();
 
-  // Fetch suggested users (users not being followed)
   const { data: suggestions } = useQuery({
     queryKey: ['suggestions', user?.id],
     queryFn: async () => {
       if (!user) return [];
       
-      // Get users the current user is following
       const { data: following } = await supabase
         .from('follows')
         .select('following_id')
         .eq('follower_id', user.id);
       
       const followingIds = following?.map(f => f.following_id) || [];
-      followingIds.push(user.id); // Exclude self
+      followingIds.push(user.id);
 
-      // Get users not being followed
       const { data: profiles } = await supabase
         .from('profiles')
         .select('*')
@@ -56,23 +52,21 @@ const Sidebar = () => {
       <div className="sticky top-20">
         {/* Current User */}
         <Link to={`/profile/${currentUserProfile?.username}`} className="flex items-center gap-4 mb-6">
-          <motion.div
-            className="w-14 h-14 rounded-full overflow-hidden cursor-pointer"
-            whileHover={{ scale: 1.05 }}
-          >
+          <div className="w-14 h-14 rounded-full overflow-hidden cursor-pointer hover:opacity-90 transition-opacity">
             <img
               src={currentUserProfile?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop'}
               alt={currentUserProfile?.username}
               className="w-full h-full object-cover"
+              loading="lazy"
             />
-          </motion.div>
+          </div>
           <div className="flex-1">
             <h3 className="font-semibold text-sm text-foreground">{currentUserProfile?.username}</h3>
             <p className="text-sm text-muted-foreground">{currentUserProfile?.full_name || 'Your Name'}</p>
           </div>
         </Link>
 
-        {/* Suggestions Header */}
+        {/* Suggestions */}
         {suggestions && suggestions.length > 0 && (
           <>
             <div className="flex items-center justify-between mb-4">
@@ -84,27 +78,21 @@ const Sidebar = () => {
               </button>
             </div>
 
-            {/* Suggestions List */}
             <div className="space-y-4">
-              {suggestions.map((suggestion, index) => (
-                <motion.div
+              {suggestions.map((suggestion) => (
+                <div
                   key={suggestion.id}
                   className="flex items-center gap-3"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
                 >
                   <Link to={`/profile/${suggestion.username}`}>
-                    <motion.div
-                      className="w-9 h-9 rounded-full overflow-hidden cursor-pointer"
-                      whileHover={{ scale: 1.1 }}
-                    >
+                    <div className="w-9 h-9 rounded-full overflow-hidden cursor-pointer hover:opacity-90 transition-opacity">
                       <img
                         src={suggestion.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop'}
                         alt={suggestion.username}
                         className="w-full h-full object-cover"
+                        loading="lazy"
                       />
-                    </motion.div>
+                    </div>
                   </Link>
                   <div className="flex-1 min-w-0">
                     <Link to={`/profile/${suggestion.username}`}>
@@ -119,7 +107,7 @@ const Sidebar = () => {
                   <button className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
                     Follow
                   </button>
-                </motion.div>
+                </div>
               ))}
             </div>
           </>
@@ -136,7 +124,7 @@ const Sidebar = () => {
             <a href="#" className="hover:underline">Privacy</a> ·
             <a href="#" className="hover:underline">Terms</a>
           </div>
-          <p>© 2024 PICGRAM</p>
+          <p>© 2024 SubbhuBhai Verse</p>
         </div>
       </div>
     </aside>
