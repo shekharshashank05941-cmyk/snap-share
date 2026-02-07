@@ -65,7 +65,7 @@ const Profile = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background dark">
+      <div className="min-h-screen bg-background">
         <Navbar />
         <main className="pt-20 pb-24 md:pb-8 max-w-4xl mx-auto px-4">
           <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-center md:items-start mb-8">
@@ -88,7 +88,7 @@ const Profile = () => {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-background dark flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2">User not found</h2>
           <p className="text-muted-foreground mb-4">The profile you're looking for doesn't exist.</p>
@@ -103,7 +103,7 @@ const Profile = () => {
   const joinDate = format(new Date(profile.created_at), 'MMMM yyyy');
 
   return (
-    <div className="min-h-screen bg-background dark">
+    <div className="min-h-screen bg-background">
       <Navbar />
       
       <main className="pt-20 pb-24 md:pb-8 max-w-4xl mx-auto px-4">
