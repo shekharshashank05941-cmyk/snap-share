@@ -202,10 +202,10 @@ const Profile = () => {
             {/* Bio Section */}
             <div className="space-y-1">
               {profile.full_name && (
-                <p className="font-semibold text-white">{profile.full_name}</p>
+                <p className="font-semibold text-foreground">{profile.full_name}</p>
               )}
               {profile.bio && (
-                <p className="text-sm text-white/80 whitespace-pre-wrap">{profile.bio}</p>
+                <p className="text-sm text-foreground/80 whitespace-pre-wrap">{profile.bio}</p>
               )}
               <div className="flex flex-wrap justify-center md:justify-start gap-3 text-sm text-muted-foreground mt-2">
                 {profile.website && (
@@ -393,8 +393,8 @@ const Profile = () => {
                         className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                       />
                       <div>
-                        <span className="font-semibold text-sm mr-2 text-white">{selectedPost.profile.username}</span>
-                        <span className="text-sm text-white">{selectedPost.caption}</span>
+                        <span className="font-semibold text-sm mr-2 text-foreground">{selectedPost.profile.username}</span>
+                        <span className="text-sm text-foreground">{selectedPost.caption}</span>
                         <p className="text-xs text-muted-foreground mt-1">
                           {formatDistanceToNow(new Date(selectedPost.created_at), { addSuffix: true })}
                         </p>
