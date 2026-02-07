@@ -18,8 +18,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener BEFORE checking session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!mounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -29,34 +33,67 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const { user } = session;
         const metadata = user.user_metadata;
         
-        // Check if profile exists
-        const { data: existingProfile } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', user.id)
-          .single();
+        // Use setTimeout to avoid Supabase auth deadlock
+        setTimeout(async () => {
+          try {
+            const { data: existingProfile } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('id', user.id)
+              .maybeSingle();
 
-        if (!existingProfile) {
-          // Create profile from Google metadata
-          const username = metadata.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`;
-          await supabase.from('profiles').insert({
-            id: user.id,
-            username: username.toLowerCase().replace(/[^a-z0-9_]/g, ''),
-            full_name: metadata.full_name || metadata.name || '',
-            avatar_url: metadata.avatar_url || metadata.picture || '',
-          });
-        }
+            if (!existingProfile) {
+              const username = metadata.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`;
+              await supabase.from('profiles').insert({
+                id: user.id,
+                username: username.toLowerCase().replace(/[^a-z0-9_]/g, ''),
+                full_name: metadata.full_name || metadata.name || '',
+                avatar_url: metadata.avatar_url || metadata.picture || '',
+              });
+            }
+          } catch (err) {
+            console.error('Profile creation error:', err);
+          }
+        }, 0);
       }
     });
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    // Check for existing session with error handling
+    supabase.auth.getSession()
+      .then(({ data: { session }, error }) => {
+        if (!mounted) return;
+        if (error) {
+          console.error('Session retrieval error:', error);
+          // Clear corrupted session
+          supabase.auth.signOut().catch(() => {});
+          setSession(null);
+          setUser(null);
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        console.error('Session check failed:', err);
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+      });
 
-    return () => subscription.unsubscribe();
+    // Safety timeout — never stay loading forever
+    const timeout = setTimeout(() => {
+      if (mounted) {
+        setLoading(false);
+      }
+    }, 5000);
+
+    return () => {
+      mounted = false;
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signInWithGoogle = async () => {
