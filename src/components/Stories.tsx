@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Plus, Loader2 } from 'lucide-react';
 import { useStories, Story } from '@/hooks/useStories';
 import { useAuth } from '@/hooks/useAuth';
@@ -60,7 +59,6 @@ const Stories = () => {
             hasNewStory={hasUserStory}
             isAddButton={!hasUserStory}
             onClick={handleCreateClick}
-            index={0}
           />
           
           {/* Other users' stories */}
@@ -73,7 +71,6 @@ const Stories = () => {
                 avatar={story.profile?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop'}
                 hasNewStory={true}
                 onClick={() => handleStoryClick(index)}
-                index={index + 1}
               />
             ))}
         </div>
@@ -98,16 +95,11 @@ interface StoryItemProps {
   hasNewStory: boolean;
   isAddButton?: boolean;
   onClick?: () => void;
-  index: number;
 }
 
-const StoryItem = ({ username, avatar, hasNewStory, isAddButton, onClick, index }: StoryItemProps) => (
-  <motion.div
-    className="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0"
-    initial={{ opacity: 0, scale: 0.8 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={{ delay: index * 0.05 }}
-    whileHover={{ scale: 1.05 }}
+const StoryItem = ({ username, avatar, hasNewStory, isAddButton, onClick }: StoryItemProps) => (
+  <div
+    className="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0 active:scale-95 transition-transform"
     onClick={onClick}
   >
     <div className={`relative ${hasNewStory ? 'story-ring' : 'p-[2px]'}`}>
@@ -116,6 +108,7 @@ const StoryItem = ({ username, avatar, hasNewStory, isAddButton, onClick, index 
           src={avatar}
           alt={username}
           className="w-full h-full object-cover rounded-full"
+          loading="lazy"
         />
       </div>
       {isAddButton && (
@@ -127,7 +120,7 @@ const StoryItem = ({ username, avatar, hasNewStory, isAddButton, onClick, index 
     <span className="text-[10px] sm:text-xs text-foreground truncate w-14 sm:w-16 text-center">
       {username.length > 8 ? username.slice(0, 8) + '...' : username}
     </span>
-  </motion.div>
+  </div>
 );
 
 export default Stories;
