@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Heart, MessageCircle, Send, Bookmark, Volume2, VolumeX, Play } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import MobileNav from '@/components/MobileNav';
+import ReelItem from '@/components/ReelItem';
 import { usePosts } from '@/hooks/usePosts';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -10,61 +9,55 @@ import { Skeleton } from '@/components/ui/skeleton';
 const Reels = () => {
   const { posts, isLoading, likePost, unlikePost } = usePosts();
   const { user } = useAuth();
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(0);
   const [muted, setMuted] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [progress, setProgress] = useState(0);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const reelRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const reels = posts?.filter((post) => post.is_reel) || [];
-  const currentReel = reels[currentIndex];
 
-  const handleScroll = (direction: 'up' | 'down') => {
-    if (direction === 'down' && currentIndex < reels.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setIsPlaying(true);
-    } else if (direction === 'up' && currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-      setIsPlaying(true);
-    }
-  };
-
-  const handleLike = () => {
-    if (!user || !currentReel) return;
-    if (currentReel.is_liked) {
-      unlikePost.mutate(currentReel.id);
-    } else {
-      likePost.mutate(currentReel.id);
-    }
-  };
-
-  const togglePlay = useCallback(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    if (video.paused) {
-      video.play().then(() => setIsPlaying(true)).catch(() => {});
-    } else {
-      video.pause();
-      setIsPlaying(false);
-    }
-  }, []);
-
+  // IntersectionObserver to detect which reel is visible
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    const handleTime = () => {
-      setProgress((video.currentTime / video.duration) * 100 || 0);
-    };
-    video.addEventListener('timeupdate', handleTime);
-    return () => video.removeEventListener('timeupdate', handleTime);
-  }, [currentIndex]);
+    const container = containerRef.current;
+    if (!container || reels.length === 0) return;
 
-  useEffect(() => {
-    const video = videoRef.current;
-    if (video && isPlaying) {
-      video.play().catch(() => {});
-    }
-  }, [currentIndex]);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = Number(entry.target.getAttribute('data-index'));
+            if (!isNaN(index)) {
+              setActiveIndex(index);
+            }
+          }
+        });
+      },
+      {
+        root: container,
+        threshold: 0.6,
+      }
+    );
+
+    reelRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => observer.disconnect();
+  }, [reels.length]);
+
+  const handleLike = useCallback(
+    (reelId: string, isLiked: boolean) => {
+      if (!user) return;
+      if (isLiked) {
+        unlikePost.mutate(reelId);
+      } else {
+        likePost.mutate(reelId);
+      }
+    },
+    [user, likePost, unlikePost]
+  );
+
+  const toggleMute = useCallback(() => setMuted((m) => !m), []);
 
   if (isLoading) {
     return (
@@ -94,125 +87,31 @@ const Reels = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="h-[100dvh] bg-black flex flex-col overflow-hidden">
       <Navbar />
-      
-      <main 
-        className="pt-16 pb-14 md:pb-0 h-screen flex items-center justify-center"
-        onWheel={(e) => handleScroll(e.deltaY > 0 ? 'down' : 'up')}
+
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
+        style={{ scrollBehavior: 'smooth' }}
       >
-        <div
-          key={currentReel?.id}
-          className="relative w-full max-w-md aspect-[9/16] bg-card rounded-xl overflow-hidden"
-          onClick={togglePlay}
-        >
-          <video
-            ref={videoRef}
-            src={currentReel?.media_url}
-            className="w-full h-full object-cover"
-            autoPlay
-            loop
-            muted={muted}
-            playsInline
-          />
-
-          {/* Center play indicator */}
-          {!isPlaying && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center border border-white/20">
-                <Play className="w-7 h-7 text-white ml-1" fill="white" />
-              </div>
-            </div>
-          )}
-
-          {/* Bottom gradient */}
-          <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
-
-          {/* Progress bar */}
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
-            <div
-              className="h-full bg-primary transition-[width] duration-100"
-              style={{ width: `${progress}%` }}
+        {reels.map((reel, index) => (
+          <div
+            key={reel.id}
+            ref={(el) => { reelRefs.current[index] = el; }}
+            data-index={index}
+            className="h-[100dvh] w-full snap-start snap-always"
+          >
+            <ReelItem
+              reel={reel}
+              isActive={activeIndex === index}
+              muted={muted}
+              onToggleMute={toggleMute}
+              onLike={() => handleLike(reel.id, reel.is_liked)}
             />
           </div>
-
-          {/* Sound toggle */}
-          <button
-            className="absolute top-4 right-4 p-2.5 bg-black/40 rounded-full border border-white/10"
-            onClick={(e) => { e.stopPropagation(); setMuted(!muted); }}
-          >
-            {muted ? (
-              <VolumeX className="w-5 h-5 text-white" />
-            ) : (
-              <Volume2 className="w-5 h-5 text-white" />
-            )}
-          </button>
-
-          {/* Actions */}
-          <div className="absolute right-3 bottom-24 flex flex-col gap-5">
-            <button
-              onClick={(e) => { e.stopPropagation(); handleLike(); }}
-              className="flex flex-col items-center gap-1 active:scale-90 transition-transform"
-            >
-              <div className="p-2 bg-black/30 rounded-full">
-                <Heart
-                  className={`w-6 h-6 ${
-                    currentReel?.is_liked ? 'text-red-500 fill-red-500' : 'text-white'
-                  }`}
-                />
-              </div>
-              <span className="text-white text-xs font-medium">{currentReel?.likes_count}</span>
-            </button>
-            
-            <button className="flex flex-col items-center gap-1" onClick={(e) => e.stopPropagation()}>
-              <div className="p-2 bg-black/30 rounded-full">
-                <MessageCircle className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-white text-xs font-medium">{currentReel?.comments_count}</span>
-            </button>
-            
-            <button onClick={(e) => e.stopPropagation()}>
-              <div className="p-2 bg-black/30 rounded-full">
-                <Send className="w-6 h-6 text-white" />
-              </div>
-            </button>
-            
-            <button onClick={(e) => e.stopPropagation()}>
-              <div className="p-2 bg-black/30 rounded-full">
-                <Bookmark className="w-6 h-6 text-white" />
-              </div>
-            </button>
-          </div>
-
-          {/* User info */}
-          <div className="absolute left-4 bottom-8 right-20">
-            <Link to={`/profile/${currentReel?.profile.username}`} className="flex items-center gap-2.5 mb-2" onClick={(e) => e.stopPropagation()}>
-              <img
-                src={currentReel?.profile.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop'}
-                alt={currentReel?.profile.username}
-                className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-lg"
-                loading="lazy"
-              />
-              <span className="text-white font-bold text-sm">{currentReel?.profile.username}</span>
-            </Link>
-            {currentReel?.caption && (
-              <p className="text-white/90 text-sm line-clamp-2 leading-relaxed">{currentReel.caption}</p>
-            )}
-          </div>
-
-          {/* Reel indicators */}
-          <div className="absolute top-2 left-0 right-0 flex gap-1 px-2">
-            {reels.map((_, index) => (
-              <div
-                key={index}
-                className={`h-0.5 flex-1 rounded-full transition-colors ${
-                  index === currentIndex ? 'bg-white' : 'bg-white/30'
-                }`}
-              />
-            ))}
-          </div>
-        </div>
-      </main>
+        ))}
+      </div>
 
       <MobileNav />
     </div>
