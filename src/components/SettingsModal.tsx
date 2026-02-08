@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, LogOut, Moon, Sun, Bell, Lock, HelpCircle, Info, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
@@ -15,10 +16,12 @@ interface SettingsModalProps {
 
 const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
   const { signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
   const [notifications, setNotifications] = useState(true);
+
+  const isDark = theme === 'dark';
 
   const handleSignOut = async () => {
     setIsLoggingOut(true);
@@ -41,13 +44,13 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
       title: 'Preferences',
       items: [
         {
-          icon: darkMode ? Moon : Sun,
+          icon: isDark ? Moon : Sun,
           label: 'Dark Mode',
           description: 'Toggle dark/light theme',
           action: (
             <Switch
-              checked={darkMode}
-              onCheckedChange={setDarkMode}
+              checked={isDark}
+              onCheckedChange={toggleTheme}
             />
           ),
         },
@@ -130,7 +133,7 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                     {group.title}
                   </h3>
                 </div>
-                {group.items.map((item, itemIndex) => (
+                {group.items.map((item) => (
                   <div
                     key={item.label}
                     className={`flex items-center gap-4 px-4 py-3 hover:bg-secondary/50 transition-colors ${
