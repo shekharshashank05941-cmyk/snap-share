@@ -26,7 +26,7 @@ const Explore = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background dark">
+    <div className="min-h-screen bg-background">
       <Navbar />
       
       <main className="pt-20 pb-24 md:pb-8 max-w-5xl mx-auto px-2 sm:px-4">
